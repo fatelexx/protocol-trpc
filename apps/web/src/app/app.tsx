@@ -1,15 +1,12 @@
 import { trpc } from "../trpc";
 
 export function App() {
-  const onClick = async () => {
-    const user = await trpc.user.getUserById.query('0');
+  const { data, isLoading } = trpc.user.getUsers.useQuery();
 
-    console.log(user);
-  };
+  if (isLoading) return <span>Loading ...</span>;
+  if (!data) return <span>No data found</span>
 
-  return (
-    <button onClick={onClick}>Test Trpc</button>
-  );
+  return data.map(d => <div key={d.id}>{d.name}</div>);
 }
 
 export default App;
