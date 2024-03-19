@@ -1,44 +1,22 @@
-/**
- * This a minimal tRPC server
- */
-import { createHTTPServer } from '@trpc/server/adapters/standalone';
-import { z } from 'zod';
-import { db } from './db.js';
-import { publicProcedure, router } from './trpc.js';
+import cors from 'cors';
+import express from 'express';
+import * as trpcExpress from '@trpc/server/adapters/express';
 
-const appRouter = router({
-  user: {
-    list: publicProcedure.query(async () => {
-      // Retrieve users from a datasource, this is an imaginary database
-      const users = await db.user.findMany();
-      //    ^?
-      return users;
-    }),
-    byId: publicProcedure.input(z.string()).query(async (opts) => {
-      const { input } = opts;
-      //      ^?
-      // Retrieve the user with the given ID
-      const user = await db.user.findById(input);
-      return user;
-    }),
-    create: publicProcedure
-      .input(z.object({ name: z.string() }))
-      .mutation(async (opts) => {
-        const { input } = opts;
-        //      ^?
-        // Create a new user in the database
-        const user = await db.user.create({name: input.name});
-        //    ^?
-        return user;
-      }),
-  },
-});
+import { appRouter } from './router';
+import { createContext } from './context';
 
-// Export type router type signature, this is used by the client.
+const app = express();
+
+app.use(cors({credentials: true, origin: true}));
+
+app.use(
+  '/trpc',
+  trpcExpress.createExpressMiddleware({
+    router: appRouter,
+    createContext,
+  })
+);
+
+app.listen(3000);
+
 export type AppRouter = typeof appRouter;
-
-const server = createHTTPServer({
-  router: appRouter,
-});
-
-server.listen(3000);
